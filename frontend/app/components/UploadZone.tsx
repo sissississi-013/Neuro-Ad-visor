@@ -121,7 +121,7 @@ export default function UploadZone({ onUpload, loading }: Props) {
                   <Music size={24} />
                 </div>
                 <p className="text-[var(--dim)] font-medium">
-                  Drop a video or image to scan
+                  Drop your creative to analyze
                 </p>
                 <p className="text-xs text-[var(--dim)]/60 font-mono">
                   MP4, MOV, WebM, AVI &bull; PNG, JPG, WebP &bull; up to 100 MB
@@ -153,7 +153,7 @@ export default function UploadZone({ onUpload, loading }: Props) {
           type="text"
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          placeholder="Caption / copy text (optional)"
+          placeholder="Ad copy / caption text (optional)"
           className="flex-1 px-4 py-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl font-mono text-sm text-[var(--foreground)] placeholder:text-[var(--dim)]/40 focus:outline-none focus:border-[var(--cyan)]/50 transition-colors"
         />
         <select
@@ -189,12 +189,12 @@ export default function UploadZone({ onUpload, loading }: Props) {
             >
               <Zap size={16} />
             </motion.div>
-            Scanning Brain Response...
+            Analyzing Audience Response...
           </>
         ) : (
           <>
             <Zap size={16} />
-            Scan Brain Response
+            Predict Audience Response
           </>
         )}
       </motion.button>

@@ -23,10 +23,10 @@ type Phase = "upload" | "simulation" | "interpretation" | "polishing" | "compari
 
 const PHASE_META: Record<Phase, { icon: React.ReactNode; label: string; step: number }> = {
   upload:         { icon: <Brain size={14} />,       label: "Upload",        step: 1 },
-  simulation:     { icon: <Activity size={14} />,    label: "Brain Scan",    step: 2 },
+  simulation:     { icon: <Activity size={14} />,    label: "Neuro Scan",   step: 2 },
   interpretation: { icon: <Lightbulb size={14} />,   label: "Insights",      step: 3 },
-  polishing:      { icon: <Sparkles size={14} />,    label: "Polish",        step: 4 },
-  comparison:     { icon: <GitCompare size={14} />,  label: "Compare",       step: 5 },
+  polishing:      { icon: <Sparkles size={14} />,    label: "Optimize",      step: 4 },
+  comparison:     { icon: <GitCompare size={14} />,  label: "Results",       step: 5 },
 };
 
 export default function Home() {
@@ -127,9 +127,9 @@ export default function Home() {
               <Brain size={16} className="text-[var(--cyan)]" />
             </div>
             <div>
-              <h1 className="font-semibold text-sm tracking-tight">FeedYourBrain</h1>
+              <h1 className="font-semibold text-sm tracking-tight">Neuro-Advisor</h1>
               <p className="font-mono text-[10px] text-[var(--dim)] uppercase tracking-widest">
-                Neuro Content Intelligence
+                AI Neuromarketing Intelligence
               </p>
             </div>
           </div>
@@ -209,14 +209,37 @@ export default function Home() {
                 className="text-center mb-12"
               >
                 <h2 className="text-4xl font-bold tracking-tight mb-3">
-                  See how brains{" "}
-                  <span className="text-[var(--cyan)]">react</span>
+                  Know what{" "}
+                  <span className="text-[var(--cyan)]">converts</span>{" "}
+                  before you post
                 </h2>
-                <p className="text-[var(--dim)] max-w-md mx-auto leading-relaxed">
-                  Upload a video or image and we&apos;ll simulate the human
-                  brain&apos;s emotional response using Meta&apos;s TRIBE v2
-                  fMRI model trained on 720 subjects.
+                <p className="text-[var(--dim)] max-w-lg mx-auto leading-relaxed">
+                  Predict your audience&apos;s emotional response to any creative
+                  — powered by Meta&apos;s TRIBE v2 fMRI model trained on 720
+                  real brain scans. Get AI-driven optimization suggestions that
+                  boost engagement.
                 </p>
+              </motion.div>
+
+              {/* Social proof / value props */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-wrap justify-center gap-6 mb-10 font-mono text-[11px] text-[var(--dim)] uppercase tracking-widest"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--cyan)]" />
+                  Real fMRI-based predictions
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--magenta)]" />
+                  AI content optimization
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--emerald)]" />
+                  Before &amp; after comparison
+                </span>
               </motion.div>
 
               <UploadZone onUpload={handleUpload} loading={loading} />
@@ -243,8 +266,8 @@ export default function Home() {
                   {loadingMsg || "Processing..."}
                 </p>
                 <p className="text-xs text-[var(--dim)] max-w-sm text-center">
-                  The brain simulation runs on an A100 GPU. First run needs to load
-                  the model (~2 min), then each scan takes ~30 seconds.
+                  Running real fMRI-based neural simulation on GPU. First analysis
+                  takes ~2 min to load, then ~30 seconds per creative.
                 </p>
               </motion.div>
             )}
@@ -375,7 +398,7 @@ export default function Home() {
                 <Sparkles size={32} className="text-[var(--magenta)]" />
               </motion.div>
               <p className="font-mono text-sm text-[var(--dim)] uppercase tracking-wider">
-                Polishing content &amp; re-simulating brain response...
+                Optimizing creative &amp; re-predicting audience response...
               </p>
             </motion.div>
           )}
@@ -388,11 +411,11 @@ export default function Home() {
             >
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold tracking-tight mb-2">
-                  Brain Response{" "}
-                  <span className="text-[var(--emerald)]">Comparison</span>
+                  Performance{" "}
+                  <span className="text-[var(--emerald)]">Uplift</span>
                 </h2>
                 <p className="text-[var(--dim)] text-sm">
-                  How your content&apos;s neural impact changed after polishing
+                  See how the optimized creative scores against your original
                 </p>
               </div>
 
@@ -411,7 +434,7 @@ export default function Home() {
                   onClick={handleReset}
                   className="px-8 py-3 rounded-xl bg-[var(--surface-raised)] border border-[var(--border)] font-mono text-sm text-[var(--dim)] hover:text-[var(--foreground)] transition-colors"
                 >
-                  Analyze Another Post
+                  Test Another Creative
                 </button>
               </div>
             </motion.div>
@@ -423,7 +446,7 @@ export default function Home() {
       <footer className="border-t border-[var(--border)] bg-[var(--surface)]/30">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <p className="font-mono text-[10px] text-[var(--dim)]/40 uppercase tracking-widest">
-            Powered by Meta TRIBE v2 &bull; Perplexity Agent API &bull; OpenAI
+            Neuro-Advisor &bull; Meta TRIBE v2 &bull; Perplexity Agent API &bull; OpenAI
           </p>
           <p className="font-mono text-[10px] text-[var(--dim)]/40">
             Perplexity Hackathon 2026

@@ -15,8 +15,8 @@ const instrument = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "FeedYourBrain",
-  description: "Neuro-powered content intelligence — simulate brain reactions to social media content",
+  title: "Neuro-Advisor",
+  description: "AI-powered neuromarketing — predict how audiences react to your content before you post",
 };
 
 export default function RootLayout({

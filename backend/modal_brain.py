@@ -40,6 +40,7 @@ tribe_image = (
         "matplotlib",
         "nilearn",
         "scipy",
+        "Pillow",
     )
     .pip_install("tribev2[plotting] @ git+https://github.com/facebookresearch/tribev2.git")
     .pip_install("fastapi[standard]")
@@ -59,8 +60,8 @@ CACHE_DIR = "/cache"
 @app.cls(
     image=tribe_image,
     gpu="A100",
-    timeout=600,
-    scaledown_window=300,  # keep warm for 5 min after last request
+    timeout=900,
+    scaledown_window=300,
     volumes={CACHE_DIR: cache_vol},
 )
 class BrainSimulator:
@@ -201,7 +202,7 @@ class BrainSimulator:
 @app.function(
     image=tribe_image,
     gpu="A100",
-    timeout=600,
+    timeout=900,
     scaledown_window=300,
     volumes={CACHE_DIR: cache_vol},
 )
@@ -292,7 +293,6 @@ def simulate_endpoint(data: dict):
     import matplotlib.pyplot as plt
 
     print("Rendering cortical heatmap...")
-    views = ["lateral_left", "medial_left", "medial_right", "lateral_right"]
     view_mapping = ["left", "medial_left", "medial_right", "right"]
 
     try:
@@ -303,10 +303,11 @@ def simulate_endpoint(data: dict):
         plotter.plot_surf(
             mean_activation, axes=axes, views=view_mapping,
             cmap="hot", norm_percentile=95,
-            colorbar=True, colorbar_title="Activation",
-            annotated_rois=top_rois[:5],
+            colorbar=False,
         )
         fig.set_size_inches(16, 4)
+        fig.subplots_adjust(wspace=0.02, left=0.01, right=0.99)
+        print("4-view cortical heatmap rendered successfully.")
     except Exception as e:
         print(f"Nilearn 4-view failed ({e}), trying 2-view...")
         try:
@@ -315,7 +316,7 @@ def simulate_endpoint(data: dict):
             plotter.plot_surf(
                 mean_activation, axes=axes, views=["left", "right"],
                 cmap="hot", norm_percentile=95,
-                colorbar=True, colorbar_title="Activation",
+                colorbar=False,
             )
             fig.set_size_inches(12, 5)
         except Exception as e2:
@@ -338,6 +339,62 @@ def simulate_endpoint(data: dict):
     buf.seek(0)
     heatmap_b64 = base64.b64encode(buf.read()).decode()
 
+    # Render per-timestep heatmaps as 2x2 grids for temporal animation
+    from PIL import Image as PILImage
+    BG_COLOR = (5, 5, 8)
+    GAP_PX = 4
+
+    def _render_4view_strip(activation):
+        """Render all 4 views in a single fast call, return as PIL Image."""
+        from tribev2.plotting.cortical import PlotBrainNilearn
+        p = PlotBrainNilearn(mesh="fsaverage5", inflate="half", bg_map="sulcal")
+        f, a = p.get_fig_axes(views=view_mapping)
+        p.plot_surf(activation, axes=a, views=view_mapping,
+                    cmap="hot", norm_percentile=95, colorbar=False)
+        f.set_size_inches(16, 4)
+        f.subplots_adjust(wspace=0.02, left=0.01, right=0.99)
+        b = io.BytesIO()
+        f.savefig(b, format="png", dpi=80, bbox_inches="tight",
+                  facecolor="#050508", edgecolor="none")
+        plt.close(f)
+        b.seek(0)
+        return PILImage.open(b).convert("RGB")
+
+    def _strip_to_2x2(strip_img):
+        """Rearrange a 4-view horizontal strip into a 2x2 grid."""
+        w, h = strip_img.size
+        quarter = w // 4
+        panels = [strip_img.crop((i * quarter, 0, (i + 1) * quarter, h)) for i in range(4)]
+
+        grid_w = quarter * 2 + GAP_PX
+        grid_h = h * 2 + GAP_PX
+        grid = PILImage.new("RGB", (grid_w, grid_h), BG_COLOR)
+        grid.paste(panels[0], (0, 0))
+        grid.paste(panels[1], (quarter + GAP_PX, 0))
+        grid.paste(panels[2], (0, h + GAP_PX))
+        grid.paste(panels[3], (quarter + GAP_PX, h + GAP_PX))
+        return grid
+
+    temporal_heatmaps = []
+    n_timesteps = preds.shape[0]
+    if n_timesteps > 1:
+        print(f"Rendering {n_timesteps} temporal brain frames (2x2 grid)...")
+
+        for t in range(n_timesteps):
+            try:
+                strip = _render_4view_strip(preds[t])
+                grid_img = _strip_to_2x2(strip)
+                t_buf = io.BytesIO()
+                grid_img.save(t_buf, format="PNG", optimize=True)
+                t_buf.seek(0)
+                temporal_heatmaps.append(base64.b64encode(t_buf.read()).decode())
+            except Exception as ex:
+                print(f"  Frame {t+1} failed: {ex}")
+                temporal_heatmaps.append("")
+            print(f"  Frame {t+1}/{n_timesteps} rendered.")
+
+        print(f"All {n_timesteps} temporal frames rendered.")
+
     import os
     os.unlink(temp_path)
 
@@ -349,6 +406,7 @@ def simulate_endpoint(data: dict):
         "predictions_mean": mean_activation.tolist(),
         "predictions_shape": list(preds.shape),
         "temporal_roi_data": temporal_roi_data,
+        "temporal_heatmaps": temporal_heatmaps,
     }
 
 

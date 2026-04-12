@@ -231,6 +231,7 @@ async def run_simulation(session_id: str):
         "n_timesteps": sim_result["n_timesteps"],
         "top_regions": sim_result["top_regions"][:10],
         "timeline": timeline,
+        "temporal_heatmaps": sim_result.get("temporal_heatmaps", []),
     }
 
 
@@ -348,7 +349,7 @@ async def run_polishing(req: PolishRequest):
         session["polished_path"] = str(polished_path)
 
     session["polish_result"] = result
-    sessions[session_id] = session  # persist to disk
+    sessions[req.session_id] = session
 
     return {
         "session_id": req.session_id,
@@ -370,25 +371,27 @@ async def run_comparison(session_id: str):
     if not session:
         raise HTTPException(404, "Session not found")
 
-    polished_path = session.get("polished_path")
-    if not polished_path:
+    polish_result = session.get("polish_result")
+    if not polish_result:
         raise HTTPException(400, "Run polishing first")
 
-    polished_path = Path(polished_path)
-    prepared = content_processor.prepare_for_tribe(polished_path)
-
-    new_sim = brain_engine.simulate(str(prepared))
-    new_profile = compute_emotional_profile(
-        roi_means=new_sim["roi_means"],
-        top_regions=new_sim["top_regions"],
-    )
-
-    new_heatmap = brain_engine.generate_heatmap(new_sim.get("predictions"))
-    new_heatmap_b64 = base64.b64encode(new_heatmap).decode()
-
+    polished_path = session.get("polished_path")
     original_profile = session.get("profile")
     original_radar = original_profile.radar_values() if original_profile else {}
-    new_radar = new_profile.radar_values()
+
+    if polished_path:
+        prepared = content_processor.prepare_for_tribe(Path(polished_path))
+        new_sim = brain_engine.simulate(str(prepared))
+        new_profile = compute_emotional_profile(
+            roi_means=new_sim["roi_means"],
+            top_regions=new_sim["top_regions"],
+        )
+        new_heatmap = brain_engine.generate_heatmap(new_sim.get("predictions"))
+        new_heatmap_b64 = base64.b64encode(new_heatmap).decode()
+        new_radar = new_profile.radar_values()
+    else:
+        new_radar = original_radar
+        new_heatmap_b64 = session.get("heatmap_b64", "")
 
     deltas = {}
     for dim in new_radar:

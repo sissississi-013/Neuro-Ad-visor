@@ -48,15 +48,33 @@ def _simulate_via_modal(content_path: str) -> Dict[str, Any]:
     with open(content_path, "rb") as f:
         content_b64 = base64.b64encode(f.read()).decode()
 
-    with httpx.Client(timeout=600, follow_redirects=True) as client:
-        resp = client.post(
-            MODAL_BRAIN_URL,
-            json={"content_base64": content_b64, "filename": filename},
-        )
+    import time
 
-    if resp.status_code != 200:
-        log.error("Modal returned %s: %s", resp.status_code, resp.text[:200])
-        raise RuntimeError(f"Modal brain simulation failed: HTTP {resp.status_code}")
+    payload = {"content_base64": content_b64, "filename": filename}
+    max_retries = 5
+    resp = None
+
+    with httpx.Client(timeout=600, follow_redirects=True) as client:
+        for attempt in range(max_retries):
+            resp = client.post(MODAL_BRAIN_URL, json=payload)
+            if resp.status_code == 200:
+                break
+            if resp.status_code in (204, 503, 502):
+                wait = min(10 * (attempt + 1), 30)
+                log.warning(
+                    "Modal returned %s (cold start), retrying in %ds (attempt %d/%d)",
+                    resp.status_code, wait, attempt + 1, max_retries,
+                )
+                time.sleep(wait)
+                continue
+            log.error("Modal returned %s: %s", resp.status_code, resp.text[:200])
+            raise RuntimeError(f"Modal brain simulation failed: HTTP {resp.status_code}")
+
+    if resp is None or resp.status_code != 200:
+        raise RuntimeError(
+            f"Modal brain simulation failed after {max_retries} retries: "
+            f"HTTP {resp.status_code if resp else 'no response'}"
+        )
 
     data = resp.json()
 
@@ -69,6 +87,7 @@ def _simulate_via_modal(content_path: str) -> Dict[str, Any]:
         "n_timesteps": data["n_timesteps"],
         "heatmap_bytes": base64.b64decode(data["heatmap_base64"]),
         "temporal_roi_data": data.get("temporal_roi_data", []),
+        "temporal_heatmaps": data.get("temporal_heatmaps", []),
     }
 
 

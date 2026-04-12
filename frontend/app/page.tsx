@@ -7,6 +7,7 @@ import { Brain, Activity, Lightbulb, Sparkles, GitCompare, ChevronRight } from "
 import UploadZone from "./components/UploadZone";
 import BrainViewer from "./components/BrainViewer";
 import BrainTimeline from "./components/BrainTimeline";
+import SyncedBrainView from "./components/SyncedBrainView";
 import EmotionRadar from "./components/EmotionRadar";
 import SuggestionCards from "./components/SuggestionCards";
 import CompareView from "./components/CompareView";
@@ -43,6 +44,8 @@ export default function Home() {
   const [compareData, setCompareData] = useState<any>(null);
   const [caption, setCaption] = useState("");
   const [platform, setPlatform] = useState("instagram");
+  const [mediaPreview, setMediaPreview] = useState<{ url: string; type: "video" | "image" } | null>(null);
+  const [currentTimestep, setCurrentTimestep] = useState(0);
 
   const handleUpload = async (
     file: File | null,
@@ -54,6 +57,15 @@ export default function Home() {
     setLoading(true);
     setCaption(cap);
     setPlatform(plat);
+    setCurrentTimestep(0);
+
+    if (file) {
+      const blobUrl = URL.createObjectURL(file);
+      const isVideo = file.type.startsWith("video/");
+      setMediaPreview({ url: blobUrl, type: isVideo ? "video" : "image" });
+    } else {
+      setMediaPreview(null);
+    }
 
     try {
       setLoadingMsg("Uploading content...");
@@ -105,6 +117,7 @@ export default function Home() {
   };
 
   const handleReset = () => {
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview.url);
     setPhase("upload");
     setSessionId(null);
     setSimData(null);
@@ -113,6 +126,8 @@ export default function Home() {
     setCompareData(null);
     setError(null);
     setCaption("");
+    setMediaPreview(null);
+    setCurrentTimestep(0);
   };
 
   const currentStep = PHASE_META[phase].step;
@@ -282,16 +297,31 @@ export default function Home() {
                 exit={{ opacity: 0, x: -50 }}
                 className="space-y-8"
               >
-                {/* HERO: Full-width brain heatmap */}
+                {/* HERO: Full-width brain heatmap (overall average) */}
                 <BrainViewer
                   heatmapBase64={simData.heatmap_base64}
                   topRegions={simData.top_regions}
-                  label="Cortical Activation Map"
+                  label="Overall Cortical Activation"
                 />
+
+                {/* Synced video + brain reaction (only for multi-timestep video content) */}
+                {simData.temporal_heatmaps?.length > 1 && mediaPreview && (
+                  <SyncedBrainView
+                    mediaUrl={mediaPreview.url}
+                    mediaType={mediaPreview.type}
+                    frames={simData.temporal_heatmaps}
+                    currentTimestep={currentTimestep}
+                    onTimestepChange={setCurrentTimestep}
+                  />
+                )}
 
                 {/* Timeline (only for videos with multiple timesteps) */}
                 {simData.timeline && simData.timeline.length > 1 && (
-                  <BrainTimeline timeline={simData.timeline} />
+                  <BrainTimeline
+                    timeline={simData.timeline}
+                    onTimestepSelect={setCurrentTimestep}
+                    activeTimestep={currentTimestep}
+                  />
                 )}
 
                 {/* Radar + Interpretation side by side */}

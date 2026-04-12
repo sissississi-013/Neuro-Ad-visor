@@ -1,8 +1,8 @@
-# FeedYourBrain
+# Neuro-Advisor
 
-**Simulate how the human brain reacts to your social media content before you post it.**
+**Predict how audiences emotionally react to your content before you post it.**
 
-FeedYourBrain is a neuro-powered content intelligence tool that uses Meta's TRIBE v2 brain encoding model to predict fMRI-level brain activation patterns in response to video and image content. An AI interpreter (powered by the Perplexity Agent API) then explains what emotions the content triggers, why, and how to improve it. The user stays in control: they review suggestions, choose which to apply, and specialized models polish the content accordingly.
+Neuro-Advisor is an AI neuromarketing intelligence tool for content creators and marketers. Upload a video or image and get a full cortical activation map showing how real human brains would respond — powered by Meta's TRIBE v2 fMRI model trained on 720 subjects. An AI interpreter explains what emotions are triggered and gives actionable optimization suggestions. Watch the brain's reaction change in real time with synced video playback.
 
 Built for the Perplexity Hackathon 2026.
 
@@ -10,27 +10,32 @@ Built for the Perplexity Hackathon 2026.
 
 ## How It Works
 
-FeedYourBrain follows a five-phase pipeline with the human in the loop at every step.
+Neuro-Advisor runs a five-phase pipeline with the human in the loop at every decision point.
 
-### Phase 1: Upload
+### Phase 1: Upload Your Creative
 
-Upload a video (MP4, MOV, WebM) or image (PNG, JPG, WebP). You can also paste a social media URL. The content is sent to an A100 GPU running Meta's TRIBE v2 model.
+Upload a video (MP4, MOV, WebM) or image (PNG, JPG, WebP), or paste a social media URL. Add your caption and select the target platform. The content is sent to an A100 GPU running Meta's TRIBE v2 brain encoding model.
 
-### Phase 2: Brain Simulation
+### Phase 2: Neuro Scan
 
-TRIBE v2 predicts how the human brain responds to your content across 20,484 cortical vertices on the fsaverage5 brain surface. The model was trained on 720 subjects and 1,115 hours of fMRI data. For video content, predictions are generated every 2 seconds, capturing how the brain's response changes over time.
+TRIBE v2 predicts how the human brain responds across 20,484 cortical vertices on the fsaverage5 brain surface. For video content, predictions are generated at each 2-second timestep — capturing exactly how the brain's response evolves over time. The output includes:
 
-### Phase 3: AI Interpretation
+- **Overall cortical activation map** — a 4-view heatmap showing the mean brain response
+- **Temporal brain reaction** — a synced side-by-side view: your video on the left, the brain's response animating on the right, with play/pause/scrub controls
+- **Emotional profile** — 9-axis radar chart mapping brain regions to emotions
+- **Temporal brain journey** — per-timestep emotion chart with a synced playhead
 
-The Perplexity Agent API receives the brain activation data alongside a visual of the content. It uses real-time web search to ground its analysis in neuroscience research and platform-specific best practices. The output is a plain-English explanation of what emotions are triggered, which brain regions drive them, and a ranked list of specific, actionable suggestions for improvement.
+### Phase 3: AI Insights
 
-### Phase 4: Human Decision
+The Perplexity Agent API receives the brain activation data alongside a visual of the content. It uses real-time web search grounded in neuroscience research to explain what emotions are triggered, which brain regions drive them, and delivers ranked, actionable suggestions for improvement.
 
-Suggestions are presented as toggleable cards. Each card includes the modification, which emotion it targets, its estimated impact, and the neuroscience rationale. The user decides which suggestions to apply. The AI advises; the human decides.
+### Phase 4: Optimize
 
-### Phase 5: Multimodal Polishing and Verification
+Suggestions are presented as toggleable cards with target emotion, estimated impact, and neuroscience rationale. The user decides which to apply. Selected suggestions are dispatched to specialized models: OpenAI for image regeneration and caption rewriting.
 
-Selected suggestions are dispatched to specialized models: OpenAI for image regeneration and caption rewriting. The polished content is then re-run through TRIBE v2 for a second brain simulation. A side-by-side comparison shows the before-and-after brain activation maps, emotional profile overlay, and per-dimension delta scores.
+### Phase 5: Results
+
+The polished content is re-run through TRIBE v2 for a second brain simulation. A side-by-side comparison shows the before-and-after brain activation maps, emotional profile overlay, and per-dimension performance uplift scores.
 
 ---
 
@@ -43,13 +48,17 @@ User uploads video/image
 Content Processor (format detection, image-to-video conversion)
     |
     v
-TRIBE v2 on Modal A100 GPU (20,484 cortical vertex predictions)
+TRIBE v2 on Modal A100 GPU (20,484 cortical vertex predictions per timestep)
+    |
+    +---> Mean heatmap (4-view cortical surface render)
+    +---> Per-timestep heatmaps (2x2 grid frames for temporal animation)
+    +---> Per-timestep ROI profiles (180 regions x N timesteps)
     |
     v
 ROI Emotion Analyzer (HCP MMP1.0 parcellation, 9-axis emotional profile)
     |
     v
-Perplexity Agent API (web_search for neuroscience grounding, structured JSON suggestions)
+Perplexity Agent API (web_search for neuroscience grounding, structured JSON)
     |
     v
 User reviews and selects suggestions (human-in-the-loop)
@@ -58,7 +67,7 @@ User reviews and selects suggestions (human-in-the-loop)
 OpenAI image generation + text rewriting (multimodal polishing)
     |
     v
-TRIBE v2 re-simulation (before/after brain diff)
+TRIBE v2 re-simulation (before/after performance uplift)
 ```
 
 ---
@@ -74,13 +83,13 @@ TRIBE v2 re-simulation (before/after brain diff)
 | Backend | FastAPI (Python) |
 | Frontend | Next.js, React, Tailwind CSS, Framer Motion, Recharts |
 | GPU Infrastructure | Modal (serverless A100, scale-to-zero billing) |
-| Brain Visualization | TRIBE v2 PlotBrainNilearn (nilearn cortical surface rendering) |
+| Brain Visualization | TRIBE v2 PlotBrainNilearn + PIL (nilearn cortical surface rendering, 2x2 grid composition) |
 
 ---
 
 ## Emotional Profile: 9-Axis Brain Mapping
 
-TRIBE v2 predictions are mapped to emotional dimensions using the HCP MMP1.0 brain parcellation (180 cortical regions per hemisphere). Each dimension corresponds to a well-characterized set of brain regions:
+TRIBE v2 predictions are mapped to emotional dimensions using the HCP MMP1.0 brain parcellation (180 cortical regions per hemisphere):
 
 | Dimension | Brain Regions | What It Means |
 |-----------|---------------|---------------|
@@ -101,8 +110,8 @@ TRIBE v2 predictions are mapped to emotional dimensions using the HCP MMP1.0 bra
 ```
 feedyourbrain/
   backend/
-    app.py                 # FastAPI server (8 endpoints, 5 pipeline phases)
-    brain_engine.py        # TRIBE v2 wrapper (Modal GPU / local / mock modes)
+    app.py                 # FastAPI server (5 pipeline phases)
+    brain_engine.py        # TRIBE v2 wrapper (Modal GPU / local / mock, retry logic)
     emotion_mapping.py     # HCP ROI to 9-axis emotional profile mapping
     interpreter.py         # Perplexity Agent API integration
     polisher.py            # Multimodal polishing orchestrator
@@ -115,12 +124,13 @@ feedyourbrain/
     app/
       page.tsx             # Main 5-phase pipeline UI
       components/
-        UploadZone.tsx     # Drag-and-drop upload with video preview
+        UploadZone.tsx     # Drag-and-drop upload with platform selector
         BrainViewer.tsx    # Full-width cortical heatmap display
-        BrainTimeline.tsx  # Temporal brain journey (per-2s emotion chart)
+        SyncedBrainView.tsx # Side-by-side video + brain reaction player
+        BrainTimeline.tsx  # Temporal emotion chart with synced playhead
         EmotionRadar.tsx   # 9-axis radar chart
         SuggestionCards.tsx # Toggleable suggestion cards
-        CompareView.tsx    # Before/after brain diff with delta scores
+        CompareView.tsx    # Before/after brain diff with uplift scores
     lib/
       api.ts               # API client
   docs/
@@ -144,8 +154,8 @@ feedyourbrain/
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/sissississi-013/feed_your_brain.git
-cd feed_your_brain
+git clone https://github.com/sissississi-013/Neuro-Ad-visor.git
+cd Neuro-Ad-visor
 ```
 
 Create a `.env` file in the project root:
@@ -183,37 +193,37 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser.
+Open http://localhost:3000.
 
 ---
 
 ## How Perplexity Agent API Is Used
 
-The Perplexity Agent API serves as the interpretation layer between raw brain simulation data and human-understandable insights. Specifically:
+The Perplexity Agent API serves as the interpretation layer between raw brain simulation data and human-understandable insights:
 
-1. **Model access**: We use `openai/gpt-5.4` through Perplexity's multi-provider Agent API for high-quality reasoning about neuroscience data.
+1. **Model access**: Uses `openai/gpt-5.4` through Perplexity's multi-provider Agent API for high-quality reasoning about neuroscience data.
 
-2. **Web search grounding**: The agent uses `web_search` (filtered to neuroscience domains like nature.com, ncbi.nlm.nih.gov, and .edu sites) to back its interpretations with real research. Every recommendation references actual brain region functions documented in the literature.
+2. **Web search grounding**: The agent uses `web_search` filtered to neuroscience domains (nature.com, ncbi.nlm.nih.gov, .edu sites) to back its interpretations with real research.
 
-3. **Image attachments**: When analyzing images, the content is attached directly to the agent so it can see what the viewer sees alongside the brain activation data. For video, a representative frame is extracted and attached.
+3. **Image attachments**: Content is attached directly so the agent can see what the viewer sees alongside the brain activation data. For video, a representative frame is extracted.
 
-4. **Structured output**: The agent returns JSON conforming to a strict schema (`brain_analysis`) with fields for summary, dominant emotion, concern level, and an array of suggestion objects (each with title, description, target emotion, estimated impact, rationale, and modification type). This enables clean parsing and direct rendering as UI cards.
+4. **Structured output**: Returns JSON conforming to a strict schema with summary, dominant emotion, concern level, and suggestion objects (title, description, target emotion, estimated impact, rationale, modification type).
 
-5. **Streaming**: An SSE endpoint streams the interpretation in real time for responsive UI updates.
+5. **Streaming**: An SSE endpoint streams the interpretation in real time.
 
 ---
 
 ## Key Differentiators
 
-- **Real neuroscience model**: TRIBE v2 is trained on actual fMRI data from 720 human subjects. This is not sentiment analysis or keyword matching. It predicts cortical activation patterns at 20,484 vertices.
+- **Real neuroscience model**: TRIBE v2 is trained on actual fMRI data from 720 human subjects. This is not sentiment analysis — it predicts cortical activation at 20,484 vertices.
 
-- **Temporal brain journey**: For video content, the system shows how brain activation changes every 2 seconds. You can see exactly when fear spikes, when attention drops, when reward peaks.
+- **Temporal brain reaction viewer**: For video content, watch the brain's response animate in sync with your video. Scrub to any moment and see exactly which frame triggered which brain reaction.
 
 - **Human-in-the-loop**: The AI interprets and suggests, but the user always decides what changes to make. Creative control is preserved.
 
-- **Grounded in research**: Every interpretation is backed by real-time web search of neuroscience literature via the Perplexity Agent API. Not vibes. Science.
+- **Grounded in research**: Every interpretation is backed by real-time web search of neuroscience literature via the Perplexity Agent API.
 
-- **Ethical content guardian**: Beyond marketing optimization, this tool can identify and help remove manipulative emotional triggers like fear-mongering in news thumbnails or anxiety exploitation in ads.
+- **Performance uplift verification**: After optimization, the content is re-scanned through TRIBE v2 for a measurable before-and-after comparison.
 
 ---
 

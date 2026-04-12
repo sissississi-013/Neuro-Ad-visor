@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 
@@ -21,6 +22,7 @@ interface TimelinePoint {
 interface Props {
   timeline: TimelinePoint[];
   onTimestepSelect?: (t: number) => void;
+  activeTimestep?: number;
 }
 
 const EMOTIONS = [
@@ -32,7 +34,7 @@ const EMOTIONS = [
   { key: "empathy", color: "#f0abfc", label: "Empathy" },
 ];
 
-export default function BrainTimeline({ timeline, onTimestepSelect }: Props) {
+export default function BrainTimeline({ timeline, onTimestepSelect, activeTimestep }: Props) {
   const [hoveredTime, setHoveredTime] = useState<number | null>(null);
   const [selectedEmotions, setSelectedEmotions] = useState<Set<string>>(
     new Set(["fear", "reward", "visual_attention", "anxiety"])
@@ -105,7 +107,14 @@ export default function BrainTimeline({ timeline, onTimestepSelect }: Props) {
       {/* Chart */}
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
+          <AreaChart
+            data={chartData}
+            onClick={(state: any) => {
+              if (state?.activeTooltipIndex != null && onTimestepSelect) {
+                onTimestepSelect(state.activeTooltipIndex);
+              }
+            }}
+          >
             <XAxis
               dataKey="time"
               tick={{ fill: "var(--dim)", fontSize: 10, fontFamily: "'JetBrains Mono'" }}
@@ -129,6 +138,15 @@ export default function BrainTimeline({ timeline, onTimestepSelect }: Props) {
               }}
               labelStyle={{ color: "var(--foreground)" }}
             />
+            {activeTimestep != null && chartData[activeTimestep] && (
+              <ReferenceLine
+                x={chartData[activeTimestep].time}
+                stroke="#00f0ff"
+                strokeWidth={2}
+                strokeDasharray="4 2"
+                opacity={0.7}
+              />
+            )}
             {EMOTIONS.filter((e) => selectedEmotions.has(e.key)).map((e) => (
               <Area
                 key={e.key}

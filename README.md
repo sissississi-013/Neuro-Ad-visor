@@ -8,7 +8,7 @@ Shoutout to Codeology & Perplexity for this amazing event!
 
 ### Demo: Temporal Brain Reaction
 
-https://github.com/sissississi-013/Neuro-Ad-visor/releases/download/v0.1.0/demo.mp4
+![Demo of temporal brain reaction viewer](readmemedia/demo.gif)
 
 ---
 

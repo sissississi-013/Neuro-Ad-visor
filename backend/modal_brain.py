@@ -20,6 +20,7 @@ app = modal.App("feedyourbrain-tribe")
 tribe_image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("git", "ffmpeg")
+    .env({"HF_HOME": "/cache/huggingface"})
     .pip_install(
         "torch>=2.5.1,<2.7",
         "torchvision>=0.20,<0.22",
@@ -339,61 +340,32 @@ def simulate_endpoint(data: dict):
     buf.seek(0)
     heatmap_b64 = base64.b64encode(buf.read()).decode()
 
-    # Render per-timestep heatmaps as 2x2 grids for temporal animation
-    from PIL import Image as PILImage
-    BG_COLOR = (5, 5, 8)
-    GAP_PX = 4
-
-    def _render_4view_strip(activation):
-        """Render all 4 views in a single fast call, return as PIL Image."""
-        from tribev2.plotting.cortical import PlotBrainNilearn
-        p = PlotBrainNilearn(mesh="fsaverage5", inflate="half", bg_map="sulcal")
-        f, a = p.get_fig_axes(views=view_mapping)
-        p.plot_surf(activation, axes=a, views=view_mapping,
-                    cmap="hot", norm_percentile=95, colorbar=False)
-        f.set_size_inches(16, 4)
-        f.subplots_adjust(wspace=0.02, left=0.01, right=0.99)
-        b = io.BytesIO()
-        f.savefig(b, format="png", dpi=80, bbox_inches="tight",
-                  facecolor="#050508", edgecolor="none")
-        plt.close(f)
-        b.seek(0)
-        return PILImage.open(b).convert("RGB")
-
-    def _strip_to_2x2(strip_img):
-        """Rearrange a 4-view horizontal strip into a 2x2 grid."""
-        w, h = strip_img.size
-        quarter = w // 4
-        panels = [strip_img.crop((i * quarter, 0, (i + 1) * quarter, h)) for i in range(4)]
-
-        grid_w = quarter * 2 + GAP_PX
-        grid_h = h * 2 + GAP_PX
-        grid = PILImage.new("RGB", (grid_w, grid_h), BG_COLOR)
-        grid.paste(panels[0], (0, 0))
-        grid.paste(panels[1], (quarter + GAP_PX, 0))
-        grid.paste(panels[2], (0, h + GAP_PX))
-        grid.paste(panels[3], (quarter + GAP_PX, h + GAP_PX))
-        return grid
-
     temporal_heatmaps = []
     n_timesteps = preds.shape[0]
     if n_timesteps > 1:
-        print(f"Rendering {n_timesteps} temporal brain frames (2x2 grid)...")
-
-        for t in range(n_timesteps):
-            try:
-                strip = _render_4view_strip(preds[t])
-                grid_img = _strip_to_2x2(strip)
-                t_buf = io.BytesIO()
-                grid_img.save(t_buf, format="PNG", optimize=True)
-                t_buf.seek(0)
-                temporal_heatmaps.append(base64.b64encode(t_buf.read()).decode())
-            except Exception as ex:
-                print(f"  Frame {t+1} failed: {ex}")
-                temporal_heatmaps.append("")
-            print(f"  Frame {t+1}/{n_timesteps} rendered.")
-
-        print(f"All {n_timesteps} temporal frames rendered.")
+        print(f"Rendering {n_timesteps} temporal brain frames...")
+        try:
+            from tribev2.plotting.cortical import PlotBrainNilearn
+            for t in range(n_timesteps):
+                try:
+                    tp = PlotBrainNilearn(mesh="fsaverage5", inflate="half", bg_map="sulcal")
+                    tf, ta = tp.get_fig_axes(views=["left", "right"])
+                    tp.plot_surf(preds[t], axes=ta, views=["left", "right"],
+                                 cmap="hot", norm_percentile=95, colorbar=False)
+                    tf.set_size_inches(8, 4)
+                    tb = io.BytesIO()
+                    tf.savefig(tb, format="png", dpi=80, bbox_inches="tight",
+                               facecolor="#050508", edgecolor="none")
+                    plt.close(tf)
+                    tb.seek(0)
+                    temporal_heatmaps.append(base64.b64encode(tb.read()).decode())
+                except Exception as ex:
+                    print(f"  Frame {t+1} failed: {ex}")
+                    temporal_heatmaps.append("")
+                print(f"  Frame {t+1}/{n_timesteps} done.")
+            print(f"All {n_timesteps} temporal frames rendered.")
+        except Exception as ex:
+            print(f"Temporal rendering setup failed: {ex}")
 
     import os
     os.unlink(temp_path)

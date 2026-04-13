@@ -6,6 +6,8 @@ Neuro-Advisor is an AI neuromarketing tool that uses Meta's TRIBE v2 fMRI model 
 
 Shoutout to Codeology & Perplexity for this amazing event!
 
+> **[Watch the full demo video](readmemedia/demo.mp4)** (click to download and play)
+
 ---
 
 ## Upload Your Creative

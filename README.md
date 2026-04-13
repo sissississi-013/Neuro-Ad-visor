@@ -4,7 +4,7 @@
 
 Neuro-Advisor is an AI neuromarketing tool that uses Meta's TRIBE v2 fMRI model (trained on 720 human subjects) to predict real brain activation patterns in response to video and image content. Upload a creative, get a full cortical activation map, watch the brain react in sync with your video, and receive AI-powered optimization suggestions grounded in neuroscience research.
 
-Built for the Perplexity Hackathon 2026.
+Shoutout to Codeology & Perplexity for this amazing event!
 
 ---
 
